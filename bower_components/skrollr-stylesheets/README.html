@@ -1,0 +1,108 @@
+<!DOCTYPE html><html><head><link rel="stylesheet" href="/main.css"><link rel="stylesheet" href="/animations.css" data-skrollr-stylesheet></head><body><h1>skrollr-stylesheets 0.0.6</h1>
+<p>Allows separation of skrollr keyframes and the document by putting them inside your stylesheets, in <strong>under 1kb</strong> (minified + gzipped). Works in all browsers including IE8+.</p>
+<p>See <a href="https://github.com/Prinzhorn/skrollr">https://github.com/Prinzhorn/skrollr</a> for infos on skrollr.</p>
+<h1>Documentation</h1>
+<p>This is a completely separate project. skrollr-stylesheets does not depend on skrollr in any way. It parses your stylesheets (<code>link</code> and <code>style</code> elements) and adds the information to the document as skrollr compatible data-attributes. After skrollr-stylesheets did it&#39;s job, you can use skrollr the way you&#39;re used to, just as if you had put the data-attributes on the elements manually.</p>
+<p>When I say &quot;parsing&quot; I mean it&#39;s using regular expressions. Thus you should avoid doing funky stuff inside your CSS files (actually, comments at the wrong place could break the current version). Just put all skrollr related things in one file and keep it clean.</p>
+<p>skrollr-stylesheets borrows it&#39;s syntax from CSS animations and uses it&#39;s own <code>-skrollr</code> prefix. Here&#39;s an example which should explain everything to get you started with skrollr-stylesheets.</p>
+<p>This HTML</p>
+<pre><code class="language-html">&lt;div id=&quot;foo&quot;&gt;&lt;/div&gt;</code></pre>
+<p>together with this CSS (inside any <code>style</code> or <code>link</code>)</p>
+<pre><code class="language-css">#foo {
+    -skrollr-animation-name:animation1;
+}
+
+@-skrollr-keyframes animation1 {
+    0 {
+        left:100%;
+    }
+
+    2000 {
+        left:0%;
+    }
+
+    top {
+        color:rgb(0,0,0);
+    }
+
+    bottom {
+        color:rgb(255,0,0);
+    }
+}</code></pre>
+<p>results in this HTML</p>
+<pre><code class="language-html">&lt;div id=&quot;foo&quot; data-0=&quot;left:100%;&quot; data-2000=&quot;left:0%;&quot; data-top=&quot;color:rgb(0,0,0);&quot; data-bottom=&quot;color:rgb(255,0,0);&quot;&gt;&lt;/div&gt;</code></pre>
+<p>You can use any CSS selector you want because we are using <code>document.querySelectorAll</code>. And you can even have multiple declarations affect the same element. The lower they appear inside the stylesheet(s), the higher their priority gets.</p>
+<h2>The script</h2>
+<p>In order to use skrollr-stylesheets, just place <code>dist/skrollr.stylesheets.min.js</code> at the bottom of your page before the closing <code>&lt;/body&gt;</code> (but before skrollr itself). skrollr-stylesheets will execute right when it&#39;s included and searches for all stylesheets and processes them synchronously.</p>
+<p>skrollr-stylesheets doesn&#39;t expose or expect any globals (well, except for <code>window</code> and <code>document</code>, duh). You don&#39;t need to do anything but include the script.</p>
+<h2>External stylesheets</h2>
+<p>If you want skrollr-stylesheets to parse an external stylesheet (those using a <code>link</code> element), add an empty <code>data-skrollr-stylesheet</code> attribute to it.</p>
+<p>skrollr-stylesheets ignores external (<code>&lt;link&gt;</code>) stylesheets unless they have the <code>data-skrollr-stylesheet</code> attribute. For example you wouldn&#39;t want the Bootstrap or jQuery UI stylesheet to be searched, since there are no keyframes anyway. Internal/embedded stylesheets (<code>&lt;style&gt;</code>) are always parsed (they&#39;re usually used only in dev anyway).</p>
+<p>Example</p>
+<pre><code class="language-html">&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;style.css&quot; data-skrollr-stylesheet /&gt;</code></pre>
+<p><strong>Heads up:</strong> Since external stylesheets are fetched using AJAX (more like SJACSS, but that&#39;s not the point here) the same origin policy applies which prohibits AJAX requests when viewing files using the <code>file://</code> protocol. Either fire up a local server (e.g. <code>npm install http-server -g &amp;&amp; http-server</code> or <code>php -S localhost:8080</code>) or start Chrome using <code>google-chrome --disable-web-security</code>.</p>
+<h2>Attributes</h2>
+<p>Apart from keyframes skrollr also uses attributes for other things, for examaple <code>data-anchor-target</code>. In order to set attributes from within your stylesheet, just do this:</p>
+<pre><code class="language-css">#foo {
+    -skrollr-anchor-target: &#39;#bar&#39;;
+}</code></pre>
+<p>which results in</p>
+<pre><code class="language-html">&lt;div id=&quot;foo&quot; data-anchor-target=&quot;#bar&quot;&gt;&lt;/div&gt;</code></pre>
+<p>Supported attributes are: <code>data-anchor-target</code>, <code>data-smooth-scrolling</code>, <code>data-emit-events</code>, and <code>data-menu-offset</code>.</p>
+<h2>Media queries</h2>
+<p>You <strong>cannot</strong> use media queries inside your stylesheets. Parsing those would add another level of complexity to the code. Further more this would not fit the current philosophy of skrollr-stylesheets, which is to parse and apply the keyframes once on page load and then do nothing. Media queries would need to be evaluated at each <code>resize</code> and <code>orientationchange</code>.</p>
+<p>But wait! You <strong>can</strong> use the <code>media</code> attribute on external stylesheets. But bare in mind that they are only evaluated once at page load.</p>
+<p>Example</p>
+<pre><code class="language-html">&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;style-large.css&quot; media=&quot;only screen and (min-width: 1050px)&quot; data-skrollr-stylesheet /&gt;</code></pre>
+<p>This feature relies on <a href="https://developer.mozilla.org/en-US/docs/DOM/window.matchMedia">window.matchMedia</a>. There is a <a href="https://github.com/paulirish/matchMedia.js">matchMedia polyfill</a> available that can be used with older browsers. Look at <a href="http://caniuse.com/#search=matchmedia"><a href="http://caniuse.com/#search=matchmedia">http://caniuse.com/#search=matchmedia</a></a> for browser compatibility.</p>
+<h2>Sass</h2>
+<p>The above is already pretty awesome, but it gets even better. If you know skrollr, you probably heard about the <em>constants</em> feature. Let&#39;s admit it: it does it&#39;s job, but it&#39;s ugly.</p>
+<p><a href="http://sass-lang.com/">Sass</a> to the rescue! Using Sass variables and interpolation, things can now look like this:</p>
+<pre><code class="language-scss">$about_section_begin: 0;
+$about_section_duration: 2000;
+$about_section_end: $about_section_begin + $about_section_duration;
+
+@-skrollr-keyframes animation1 {
+    #{$about_section_begin} {
+        left:100%;
+        opacity#{&quot;[swing]&quot;}: 0.0;
+    }
+
+    #{$about_section_end} {
+        left:0%;
+        opacity: 1.0;
+    }
+}</code></pre>
+<p><em>*mind blown*</em></p>
+<p>And of course you can use all the things you already love about Sass as well.</p>
+<p>Note that easing functions need to be interpolated as strings in Sass because of the non-standard syntax.</p>
+<h1>Limitations</h1>
+<p>skrollr-stylesheets does not react to changes in the document. The stylesheets are parsed once and then applied. You can&#39;t add a class to an element and expect the keyframes to get updated.</p>
+<p>skrollr-stylesheets tries to mimic the way normal CSS works in terms of inheritance and order of precedence. Stylesheets which appear lower in the document will have higher precedence, and inline keyframes will have precedence over everything else. That means if you declare the same keyframe with same properties (probably different values) in multiple places, they overwrite each other, just as normal CSS does. <strong>But skrollr-stylesheets is not able to detect which selector has a higher specificity. It only operates on element-level. Thus only the order of rules counts, not the specificity of the selector.</strong></p>
+<h1>Changelog</h1>
+<h2>0.0.6 (2014-05-28)</h2>
+<ul>
+<li>Added <code>data-menu-offset</code> to the list of attributes (#41).</li>
+</ul>
+<h2>0.0.5 (2014-04-30)</h2>
+<ul>
+<li>Attributes likes <code>data-anchor-target</code> can now be set as well (#10).</li>
+</ul>
+<h2>0.0.4 (2013-05-27)</h2>
+<ul>
+<li>Allow dashes in animation names just like in CSS animations (#18)</li>
+</ul>
+<h2>0.0.3 (2013-05-15)</h2>
+<ul>
+<li>Added support for <code>media</code> attribute on external stylesheets.</li>
+</ul>
+<h2>0.0.2 (2013-04-12)</h2>
+<ul>
+<li>Fixed several issues with IE.</li>
+<li><strong>breaking</strong>: The logic of <code>data-no-skrollr</code> has been inversed. The attribute has been removed. Instead add <code>data-skrollr-stylesheet</code> to explicitly parse this external stylesheet.</li>
+</ul>
+<h2>0.0.1</h2>
+<ul>
+<li>Initial &quot;release&quot;. Features a reasonable amount of tests to at least let people play with it.</li>
+</ul>
+<script src="./bower_components/skrollr-stylesheets/dist/skrollr.stylesheets.min.js"></script><script src="./bower_components/skrollr/dist/skrollr.min.js"></script><script type="text/javascript">var s = skrollr.init();</script></body></html>
